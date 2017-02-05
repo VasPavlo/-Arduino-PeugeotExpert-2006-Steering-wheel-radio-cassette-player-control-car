@@ -12,6 +12,7 @@
 #define _VSARDUINO_H_
 #define __AVR_ATmega328p__
 #define __AVR_ATmega328P__
+#define _VMDEBUG 1
 #define F_CPU 16000000L
 #define ARDUINO 10801
 #define ARDUINO_AVR_NANO
@@ -66,5 +67,4 @@ typedef void *__builtin_va_list;
 #undef PSTR
 #define PSTR(string_literal) ((const PROGMEM char *)(string_literal))
 #include "Multirul.ino"
-#include "e.ino"
 #endif

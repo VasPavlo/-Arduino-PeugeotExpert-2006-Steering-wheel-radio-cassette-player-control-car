@@ -3,7 +3,7 @@
 
 #include <IRremote.h>
 
-#define DELTA   0.01   // Погрешность в измерении приходящего сигнала, если показания скачут более чем на 5 едениц, то можно увеличить
+#define DELTA   0.02   // Погрешность в измерении приходящего сигнала, если показания скачут более чем на 5 едениц, то можно увеличить
 #define ALLDOWN  447 //Все кнопки отпущены
 
 #define BTN_VOLPLUS  buttonCode[17] 
@@ -51,6 +51,9 @@ unsigned long buttonCode[] = { /* NEC format */
 int analogPin0 = 0; // Анлоговый вход для считывания напряжения с делителя напряжения
 int analogPin1 = 1;
 
+int analogPin7_CarHeadlights = 7;
+int analogPin6_CarIgnitionTurnedOnOff = 6;
+
 float Vout0 = 0; // Переменная для хранения значения напряжения в средней точки делителя (0-3.3)
 float Vout1 = 0;
 
@@ -60,87 +63,94 @@ float R1 = 0; //
 
 int  LEDsMultiSteeringWheel = 6; // пин на которам висят светодиоды мультируля
 bool isLightsInCarOnOff = false;
+bool isAutoRunMagnitolla = false;
+int iterator = 0;
 
-
-void setup() {
-
+void setup()
+{
 	pinMode(LEDsMultiSteeringWheel, OUTPUT);
-	Serial.begin(14400);
-
-	//После включения питания включается магнитолла и переходит на флешку потом рандомный трек
-	delay(30000);  // 60000 = 1 min.
-	irsend.sendNEC(BTN_VOLMINUS, 32);
-	delay(220);
-	irsend.sendNEC(BTN_MODE, 32);
-	delay(220);
-
-	for (int i = 0; i <= random(8); i++)
-	{
-		irsend.sendNEC(BTN_NEXT, 32);
-		delay(220);
-	}
-	//-----------------------------------
+	Serial.begin(9600);
 }
 
 void loop()
 {
 	getLightsInCarOnOff();
 
-	unsigned long tempData = getButtonClick();
+	if (analogRead(analogPin6_CarIgnitionTurnedOnOff) >= 280)
+	{
+		unsigned long tempData = getButtonClick();
 
-	unsigned long delayTime = 120;
-
-		if (tempData == BTN_VOLPLUS)
+		if (tempData != ALLDOWN && (tempData == BTN_VOLPLUS || tempData == BTN_VOLMINUS || tempData == BTN_NEXT || tempData == BTN_BACK || tempData == BTN_MUTE || tempData == BTN_MODE || tempData == BTN_MEMONEXT || tempData == BTN_MEMOBACK ||
+			tempData == BTN_MEMONEXT_AND_BTN_VOLPLUS || tempData == BTN_MEMONEXT_AND_BTN_VOLMINUS || tempData == BTN_MEMONEXT_AND_BTN_NEXT || tempData == BTN_MEMONEXT_AND_BTN_BACK))
 		{
-			irsend.sendNEC(BTN_VOLPLUS, 32);
-			Serial.println("BTN_VOLPLUS");
-			multiSteeringWheelButtonsBlink(); // мигание кнопками на руле
-		}
-		if (tempData == BTN_VOLMINUS)
-		{
-			irsend.sendNEC(BTN_VOLMINUS, 32);
-			Serial.println("BTN_VOLMINUS");
-
-			multiSteeringWheelButtonsBlink();
+			isAutoRunMagnitolla = true;
 		}
 
-
-		if (tempData == BTN_NEXT)
+		if (!isAutoRunMagnitolla)
 		{
-			irsend.sendNEC(BTN_NEXT, 32);
-			Serial.println("BTN_NEXT");
-
-			multiSteeringWheelButtonsBlink();
+			Serial.println(iterator);
+			delay(125);				// 1000 milSec. = 1 sec. //  60 sec. = 1 min.		
+			if (iterator == 240) //0,5 min
+			{
+				isAutoRunMagnitolla = true;
+				AutoRunMagnitolla();
+			}
+			iterator += 1;
 		}
-		if (tempData == BTN_BACK)
+		else
 		{
-			irsend.sendNEC(BTN_BACK, 32);
-			Serial.println("BTN_BACK");
-			multiSteeringWheelButtonsBlink();
-		}
-	
+			unsigned long delayTime = 120;
 
-		if (tempData == BTN_MODE)
-		{
-			irsend.sendNEC(BTN_MODE, 32);
-			Serial.println("BTN_MODE");
-			multiSteeringWheelButtonsBlink();
-		}
-		if (tempData == BTN_MUTE)
-		{
-			irsend.sendNEC(BTN_MUTE, 32);
-			Serial.println("BTN_MUTE");
-			multiSteeringWheelButtonsBlink();
-		}
+			if (tempData == BTN_VOLPLUS)
+			{
+				irsend.sendNEC(BTN_VOLPLUS, 32);
+				Serial.println("BTN_VOLPLUS");
+				multiSteeringWheelButtonsBlink(); // мигание кнопками на руле
+			}
 
+			if (tempData == BTN_VOLMINUS)
+			{
+				irsend.sendNEC(BTN_VOLMINUS, 32);
+				Serial.println("BTN_VOLMINUS");
+				multiSteeringWheelButtonsBlink();
+			}
 
-		//-------------------------------
+			if (tempData == BTN_NEXT)
+			{
+				irsend.sendNEC(BTN_NEXT, 32);
+				Serial.println("BTN_NEXT");
+				multiSteeringWheelButtonsBlink();
+			}
+
+			if (tempData == BTN_BACK)
+			{
+				irsend.sendNEC(BTN_BACK, 32);
+				Serial.println("BTN_BACK");
+				multiSteeringWheelButtonsBlink();
+			}
+
+			if (tempData == BTN_MODE)
+			{
+				irsend.sendNEC(BTN_MODE, 32);
+				Serial.println("BTN_MODE");
+				multiSteeringWheelButtonsBlink();
+			}
+
+			if (tempData == BTN_MUTE)
+			{
+				irsend.sendNEC(BTN_MUTE, 32);
+				Serial.println("BTN_MUTE");
+				multiSteeringWheelButtonsBlink();
+			}
+
+			//-------------------------------
 			if (tempData == BTN_MEMONEXT_AND_BTN_VOLPLUS)
 			{
 				irsend.sendNEC(BTN_MEMONEXT_AND_BTN_VOLPLUS, 32);
 				Serial.println("BTN_MEMONEXT_AND_BTN_VOLPLUS");
 				multiSteeringWheelButtonsBlink();
 			}
+
 			if (tempData == BTN_MEMONEXT_AND_BTN_VOLMINUS)
 			{
 				irsend.sendNEC(BTN_MEMONEXT_AND_BTN_VOLMINUS, 32);
@@ -157,6 +167,7 @@ void loop()
 				Serial.println("BTN_MEMONEXT_AND_BTN_BACK");
 				multiSteeringWheelButtonsBlink();
 			}
+
 			if (tempData == BTN_MEMONEXT_AND_BTN_NEXT)
 			{
 				irsend.sendNEC(BTN_MEMONEXT_AND_BTN_NEXT, 32);
@@ -164,7 +175,6 @@ void loop()
 				multiSteeringWheelButtonsBlink();
 			}
 			//-------------------------------			
-
 
 
 		/*if (tempData == BTN_MEMONEXT)
@@ -181,7 +191,14 @@ void loop()
 
 			multiSteeringWheelButtonsBlink();
 		}*/
-		
+			delay(220);
+		}
+	}
+	else
+	{
+		iterator = 0;
+		isAutoRunMagnitolla = false;
+	}
 }
 
 
@@ -204,10 +221,20 @@ void multiSteeringWheelButtonsBlink() // мигнуть кнопками на р
 
 bool getLightsInCarOnOff() //  Получение состояни включены  фары или выключены (НЕ реализовано, по умолчанию выключены)
 {
-	//TODO: Need implement.
-	isLightsInCarOnOff = false; 
-	digitalWrite(LEDsMultiSteeringWheel, LOW);
-	return false;
+	if (analogRead(analogPin7_CarHeadlights) >= 650)
+	{
+		isLightsInCarOnOff = true;
+		digitalWrite(LEDsMultiSteeringWheel, HIGH);
+		Serial.println("LightsInCar On");
+		return true;
+	}
+	else
+	{
+		isLightsInCarOnOff = false;
+		digitalWrite(LEDsMultiSteeringWheel, LOW);
+		Serial.println("LightsInCar OFF");
+		return false;
+	}
 }
 
 unsigned long getButtonClick()
@@ -225,17 +252,14 @@ unsigned long getButtonClick()
 	//Serial.println(Vout1); // Напряжения в средней точки делителя (0-3.3) для справки
 	//Serial.print("R1: "); // 
 	//Serial.println(R1); // Значение сопротивления R1
-		
 
-
-	
 	//-------------------------------
 
-	if ((Vout0 >= (V_MEMONEXT - DELTA) && Vout0 <= (V_MEMONEXT + DELTA))   &&  (Vout1 >= (V_NEXT - DELTA) && Vout1 <= (V_NEXT + DELTA)))
+	if ((Vout0 >= (V_MEMONEXT - DELTA) && Vout0 <= (V_MEMONEXT + DELTA)) && (Vout1 >= (V_NEXT - DELTA) && Vout1 <= (V_NEXT + DELTA)))
 	{
 		return BTN_MEMONEXT_AND_BTN_NEXT;
 	}
-	if ((Vout0 >= (V_MEMONEXT - DELTA) && Vout0 <= (V_MEMONEXT + DELTA))   &&   (Vout1 >= (V_BACK - DELTA) && Vout1 <= (V_BACK + DELTA)))
+	if ((Vout0 >= (V_MEMONEXT - DELTA) && Vout0 <= (V_MEMONEXT + DELTA)) && (Vout1 >= (V_BACK - DELTA) && Vout1 <= (V_BACK + DELTA)))
 	{
 		return BTN_MEMONEXT_AND_BTN_BACK;
 	}
@@ -244,13 +268,13 @@ unsigned long getButtonClick()
 
 	//-------------------------------
 	if (Vout0 >= (V_MEMONEXT - DELTA) && Vout0 <= (V_MEMONEXT + DELTA) && Vout1 >= (V_VOLPLUS - DELTA) && Vout1 <= (V_VOLPLUS + DELTA))
-	{		
+	{
 		return BTN_MEMONEXT_AND_BTN_VOLPLUS;
 		//return ALLDOWN;
 	}
 	if (Vout0 >= (V_MEMONEXT - DELTA) && Vout0 <= (V_MEMONEXT + DELTA) && Vout1 == V_VOLMINUS)
-	{		
-		return BTN_MEMONEXT_AND_BTN_VOLMINUS;		
+	{
+		return BTN_MEMONEXT_AND_BTN_VOLMINUS;
 	}
 	//-------------------------------
 
@@ -264,15 +288,13 @@ unsigned long getButtonClick()
 	//	return BTN_MEMOBACK;
 	//}
 
-	
 
-
-	if (Vout1 >= (V_VOLPLUS - DELTA)  && Vout1 <= (V_VOLPLUS + DELTA))
-	{		
+	if (Vout1 >= (V_VOLPLUS - DELTA) && Vout1 <= (V_VOLPLUS + DELTA))
+	{
 		return BTN_VOLPLUS;
 	}
 	if (Vout1 == V_VOLMINUS)
-	{		
+	{
 		return BTN_VOLMINUS;
 	}
 
@@ -306,6 +328,28 @@ unsigned long getButtonClick()
 	//	return BTN_MEMOBACK;
 	//}
 
-	
-	return ALLDOWN;	
+
+	return ALLDOWN;
+}
+
+void AutoRunMagnitolla()
+{
+	Serial.println("AutoRunMagnitolla");
+	//После включения питания включается магнитолла и переходит на флешку потом рандомный трек
+	//delay(40000);  // 60000 = 1 min.
+	irsend.sendNEC(BTN_VOLMINUS, 32);
+	Serial.println("BTN_VOLPLUS AutoRunMagnitolla");
+	delay(3000); //6000 = 0.1 min. ~ 6 sec.
+
+	irsend.sendNEC(BTN_MODE, 32);
+	Serial.println("BTN_MODE AutoRunMagnitolla");
+	delay(3000);
+
+	for (int i = 0; i <= random(6); i++)
+	{
+		irsend.sendNEC(BTN_NEXT, 32);
+		Serial.println("BTN_NEXT AutoRunMagnitolla");
+		delay(3000);
+	}
+	//-----------------------------------
 }
