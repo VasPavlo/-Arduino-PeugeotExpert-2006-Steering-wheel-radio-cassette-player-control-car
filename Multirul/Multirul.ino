@@ -339,17 +339,17 @@ void AutoRunMagnitolla()
 	//delay(40000);  // 60000 = 1 min.
 	irsend.sendNEC(BTN_VOLMINUS, 32);
 	Serial.println("BTN_VOLPLUS AutoRunMagnitolla");
-	delay(3000); //6000 = 0.1 min. ~ 6 sec.
+	delay(4000); //6000 = 0.1 min. ~ 6 sec.
 
 	irsend.sendNEC(BTN_MODE, 32);
 	Serial.println("BTN_MODE AutoRunMagnitolla");
-	delay(3000);
+	delay(4000);
 
 	for (int i = 0; i <= random(6); i++)
 	{
 		irsend.sendNEC(BTN_NEXT, 32);
 		Serial.println("BTN_NEXT AutoRunMagnitolla");
-		delay(3000);
+		delay(2000);
 	}
 	//-----------------------------------
 }
